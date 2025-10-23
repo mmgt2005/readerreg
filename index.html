@@ -266,7 +266,7 @@
                 <p><strong>Restaurant:</strong> <span id="restaurantDisplay">Loading...</span></p>
                 <p><strong>Status:</strong> <span id="readerStatus">Ready to connect</span></p>
                 <div id="testModeIndicator" class="hidden" style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 10px; border-radius: 5px; margin-top: 10px;">
-                    ⚠️ <strong>TEST MODE ACTIVE</strong> - Using simulated readers with real webhook tokens
+                    ⚠️ <strong>TEST MODE ACTIVE</strong> - Using simulated readers with dummy tokens
                     <br><small>Add <code>&test=false</code> to URL for production mode with real hardware</small>
                 </div>
             </div>
@@ -344,10 +344,10 @@
         
         // Configuration - Replace with your actual values
         const CONFIG = {
-            STRIPE_PUBLISHABLE_KEY: 'pk_test_your_publishable_key_here', // Replace with your key
-            WEBHOOK_URL: 'https://hook.us1.make.com/your-registration-webhook-url', // Replace with your Make registration webhook URL
-            CONNECTION_TOKEN_URL: 'https://hook.us1.make.com/your-connection-token-webhook-url', // Replace with your Make connection token webhook URL
-            TEST_MODE: true // Default test mode - can be overridden by URL parameter
+            STRIPE_PUBLISHABLE_KEY: 'pk_test_HSoWzWe6AkraLJXdgCy4mAbu', // Your real key from uploaded file
+            WEBHOOK_URL: 'https://hook.us1.make.com/s4h21uupa2fx1cvevoicy5bw4mr5wnif', // Your real registration webhook
+            CONNECTION_TOKEN_URL: 'https://hook.us1.make.com/rwuneikkc7kn5sw3ucxltbs0gtneupix', // Your real connection token webhook
+            TEST_MODE: false // Using production mode like your working version
         };
 
         // Global variables
@@ -393,7 +393,7 @@
             // Show test mode indicator if enabled
             if (CONFIG.TEST_MODE) {
                 document.getElementById('testModeIndicator').classList.remove('hidden');
-                console.log('🧪 TEST MODE ENABLED - Using simulated readers with real webhook tokens');
+                console.log('🧪 TEST MODE ENABLED - Using simulated readers with dummy tokens');
             } else {
                 console.log('🚀 PRODUCTION MODE - Using real readers and webhooks');
             }
@@ -441,12 +441,15 @@
         // Fetch connection token from Make webhook
         async function fetchConnectionToken() {
             try {
-                // Always get fresh token from webhook (both test and production mode)
+                // Test mode option - can use dummy token if webhooks are failing
                 if (CONFIG.TEST_MODE) {
-                    console.log('TEST MODE: Getting fresh token from webhook (simulated readers will be used)');
-                } else {
-                    console.log('PRODUCTION MODE: Getting fresh token from webhook');
+                    console.log('TEST MODE: Using dummy connection token for simulated readers');
+                    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
+                    return 'dummy_connection_token_for_simulated_readers';
                 }
+                
+                // Production mode - always get fresh token from webhook
+                console.log('PRODUCTION MODE: Getting fresh token from webhook');
                 
                 console.log('Requesting connection token for location:', setupData.location_id);
                 
