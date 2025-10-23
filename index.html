@@ -363,7 +363,9 @@
             }
             
             parseURLParameters();
-            initializeStripeTerminal();
+            // Terminal will be initialized fresh on each connection attempt
+            console.log('Page loaded. Terminal will be initialized when connecting to reader.');
+            showStatus('Ready to connect. Click the button below to start.', 'info');
         });
 
         // Parse URL parameters from deep link
@@ -541,8 +543,20 @@
                 // Update button state
                 button.disabled = true;
                 button.className = 'connect-button connecting';
-                buttonText.innerHTML = '<span class="loading"></span>Discovering readers...';
+                buttonText.innerHTML = '<span class="loading"></span>Initializing...';
                 
+                showStatus('Initializing terminal with fresh token...', 'info');
+
+                // Always reinitialize terminal before connecting to ensure fresh token
+                // This prevents "ConnectionToken has expired" errors by getting a new token for each connection attempt
+                console.log('Reinitializing terminal for fresh connection token...');
+                await initializeStripeTerminal();
+                
+                if (!terminal) {
+                    throw new Error('Failed to initialize Stripe Terminal. Please check your configuration.');
+                }
+
+                buttonText.innerHTML = '<span class="loading"></span>Discovering readers...';
                 showStatus('Searching for your M2 reader...', 'info');
 
                 // Discover readers
