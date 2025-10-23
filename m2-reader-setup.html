@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Stripe M2 Reader Setup">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Connect Your Stripe M2 Reader</title>
+    <script src="https://js.stripe.com/terminal/v1/"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #6772e5;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .restaurant-name {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px 20px;
+        }
+
+        .setup-steps {
+            background: #f8f9ff;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .setup-steps h3 {
+            color: #32325d;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .setup-steps h3:before {
+            content: "⚡";
+            margin-right: 8px;
+            font-size: 20px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #6772e5;
+        }
+
+        .step-number {
+            background: #6772e5;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            color: #525f7f;
+            font-size: 14px;
+        }
+
+        .device-info {
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .device-info h4 {
+            color: #0050b3;
+            margin-bottom: 8px;
+        }
+
+        .device-info p {
+            color: #096dd9;
+            font-size: 14px;
+            margin: 4px 0;
+        }
+
+        .connect-button {
+            width: 100%;
+            background: linear-gradient(135deg, #32cd32, #228b22);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .connect-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(50, 205, 50, 0.3);
+        }
+
+        .connect-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .connect-button.connecting {
+            background: linear-gradient(135deg, #ffa500, #ff8c00);
+        }
+
+        .connect-button.success {
+            background: linear-gradient(135deg, #32cd32, #228b22);
+        }
+
+        .connect-button.error {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            color: #389e0d;
+        }
+
+        .status-error {
+            background: #fff2f0;
+            border: 1px solid #ffccc7;
+            color: #cf1322;
+        }
+
+        .status-info {
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+            color: #0050b3;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .reader-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f0f0f0;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online { background: #52c41a; }
+        .status-offline { background: #ff4d4f; }
+        .status-connecting { background: #faad14; }
+
+        .support-info {
+            text-align: center;
+            color: #8c8c8c;
+            font-size: 14px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .support-info a {
+            color: #6772e5;
+            text-decoration: none;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Connect Your M2 Reader</h1>
+            <div class="restaurant-name" id="restaurantName">Loading...</div>
+        </div>
+
+        <div class="content">
+            <!-- Device Information -->
+            <div class="device-info">
+                <h4>📱 Your Reader Details</h4>
+                <p><strong>Restaurant:</strong> <span id="restaurantDisplay">Loading...</span></p>
+                <p><strong>Status:</strong> <span id="readerStatus">Ready to connect</span></p>
+                <div id="testModeIndicator" class="hidden" style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                    ⚠️ <strong>TEST MODE ACTIVE</strong> - Using simulated readers and manual token
+                    <br><small>Add <code>&test=false</code> to URL for production mode</small>
+                </div>
+            </div>
+
+            <!-- Setup Steps -->
+            <div class="setup-steps">
+                <h3>Quick Setup</h3>
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Turn on your M2 reader (press power button)</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Make sure Bluetooth is enabled on this device</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-text">Tap "Connect Reader" below</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Allow Bluetooth permissions when prompted</div>
+                </div>
+            </div>
+
+            <!-- Status Messages -->
+            <div id="statusMessage" class="hidden"></div>
+
+            <!-- Connect Button -->
+            <button id="connectButton" class="connect-button" onclick="connectReader()">
+                <span id="buttonText">Connect M2 Reader</span>
+            </button>
+
+            <!-- Reader Status -->
+            <div id="readerStatusDiv" class="reader-status hidden">
+                <div>
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="connectionStatus">Disconnected</span>
+                </div>
+                <div id="readerId"></div>
+            </div>
+
+            <!-- Support Information -->
+            <div class="support-info">
+                Need help? <a href="mailto:support@yourcompany.com">Contact Support</a>
+                <br>
+                <small>Having issues? Try turning your reader off and on again.</small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*
+        TWO MAKE WEBHOOK SCENARIOS NEEDED:
+        
+        1. CONNECTION TOKEN WEBHOOK (CONFIG.CONNECTION_TOKEN_URL):
+           - Purpose: Get Stripe connection tokens for Terminal SDK
+           - Trigger: HTTP webhook when reader setup page loads
+           - Action: Call Stripe API to create connection token
+           - Response: Return {"secret": "pst_xxx"} 
+           
+        2. REGISTRATION EVENT WEBHOOK (CONFIG.WEBHOOK_URL):
+           - Purpose: Handle reader connection success/failure
+           - Trigger: HTTP webhook when reader connects or fails
+           - Action: Update database, send emails, etc.
+           - Response: Not required (fire and forget)
+           
+        URL PARAMETERS:
+        - test=true/false : Override test mode (optional)
+        - restaurant : Restaurant name
+        - location_id : Stripe location ID
+        - row_id : Database row ID
+        - regemail : Restaurant email
+        */
+        
+        // Configuration - Replace with your actual values
+        const CONFIG = {
+            STRIPE_PUBLISHABLE_KEY: 'pk_test_your_publishable_key_here', // Replace with your key
+            WEBHOOK_URL: 'https://hook.us1.make.com/your-registration-webhook-url', // Replace with your Make registration webhook URL
+            CONNECTION_TOKEN_URL: 'https://hook.us1.make.com/your-connection-token-webhook-url', // Replace with your Make connection token webhook URL
+            TEST_MODE: true // Default test mode - can be overridden by URL parameter
+        };
+
+        // Global variables
+        let terminal = null;
+        let setupData = {};
+        let currentReader = null;
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if running on proper server
+            if (!checkEnvironment()) {
+                return; // Stop if not on proper server
+            }
+            
+            parseURLParameters();
+            initializeStripeTerminal();
+        });
+
+        // Parse URL parameters from deep link
+        function parseURLParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            setupData = {
+                restaurant: urlParams.get('restaurant') || 'Your Restaurant',
+                location_id: urlParams.get('location_id') || '',
+                row_id: urlParams.get('row_id') || 'Unknown',
+                regemail: urlParams.get('regemail') || ''
+            };
+
+            // Check for test mode override in URL
+            const testParam = urlParams.get('test');
+            if (testParam !== null) {
+                CONFIG.TEST_MODE = testParam === 'true' || testParam === '1';
+                console.log(`🔧 Test mode overridden by URL parameter: ${CONFIG.TEST_MODE}`);
+            }
+
+            // Update UI with parsed data
+            document.getElementById('restaurantName').textContent = setupData.restaurant;
+            document.getElementById('restaurantDisplay').textContent = setupData.restaurant;
+            
+            // Show test mode indicator if enabled
+            if (CONFIG.TEST_MODE) {
+                document.getElementById('testModeIndicator').classList.remove('hidden');
+                console.log('🧪 TEST MODE ENABLED - Using simulated readers and manual token');
+            } else {
+                console.log('🚀 PRODUCTION MODE - Using real readers and webhooks');
+            }
+        }
+
+        // Initialize Stripe Terminal
+        async function initializeStripeTerminal() {
+            try {
+                console.log('Initializing Stripe Terminal with config:', {
+                    publishable_key: CONFIG.STRIPE_PUBLISHABLE_KEY.substring(0, 12) + '...',
+                    location_id: setupData.location_id
+                });
+
+                // Initialize Terminal with proper device info
+                terminal = StripeTerminal.create({
+                    onFetchConnectionToken: fetchConnectionToken,
+                    onUnexpectedReaderDisconnect: onUnexpectedDisconnect,
+                    // Add proper device info to prevent invalid string errors
+                    simulatorConfiguration: {
+                        testCardNumber: '4242424242424242'
+                    }
+                });
+
+                console.log('Stripe Terminal initialized successfully');
+                showStatus('Stripe Terminal initialized successfully', 'info');
+                
+            } catch (error) {
+                console.error('Failed to initialize Stripe Terminal:', error);
+                showStatus('Failed to initialize payment system. Please refresh and try again.', 'error');
+            }
+        }
+
+        // Check if running on proper server (not file:// or data:)
+        function checkEnvironment() {
+            const protocol = window.location.protocol;
+            if (protocol === 'file:' || protocol === 'data:') {
+                const errorMsg = '⚠️ This page must be served from a web server (http:// or https://), not opened as a file. Stripe Terminal SDK requires proper server hosting.';
+                console.error(errorMsg);
+                showStatus(errorMsg, 'error');
+                return false;
+            }
+            return true;
+        }
+
+        // Fetch connection token from Make webhook
+        async function fetchConnectionToken() {
+            try {
+                // Test mode - use manual token if provided
+                if (CONFIG.TEST_MODE) {
+                    // Option 1: Use manual test token (get this from your Make scenario test run)
+                    const MANUAL_TEST_TOKEN = 'pst_test_YWNjdF8xNGlRWTJCa2JERkhIbW5TLFFlU2VkcTlNQ0U2OGRlSXRnYjFvUTFvUGNsMzVKRlE_00STJQei4k'; // Your actual token for testing
+                    
+                    if (MANUAL_TEST_TOKEN && MANUAL_TEST_TOKEN.startsWith('pst_')) {
+                        console.log('TEST MODE: Using manual test token');
+                        console.log('Token starts with:', MANUAL_TEST_TOKEN.substring(0, 12));
+                        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
+                        return MANUAL_TEST_TOKEN;
+                    }
+                    
+                    // Option 2: Still call webhook but with detailed logging
+                    console.log('TEST MODE: No manual token, calling webhook with detailed logging');
+                }
+                
+                console.log('Requesting connection token for location:', setupData.location_id);
+                
+                const requestBody = {
+                    location_id: setupData.location_id,
+                    restaurant_name: setupData.restaurant,
+                    row_id: setupData.row_id,
+                    regemail: setupData.regemail,
+                    request_type: 'connection_token'
+                };
+                
+                console.log('Connection token request body:', requestBody);
+                console.log('Making request to:', CONFIG.CONNECTION_TOKEN_URL);
+
+                const response = await fetch(CONFIG.CONNECTION_TOKEN_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('HTTP Error Response:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText.substring(0, 200)}`);
+                }
+
+                // Get response as text first to see what we're actually getting
+                const responseText = await response.text();
+                console.log('Raw response text:', responseText);
+                console.log('Raw response length:', responseText.length);
+
+                // Try to parse as JSON
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                    console.log('Parsed response data:', data);
+                } catch (parseError) {
+                    console.error('Failed to parse response as JSON:', parseError);
+                    console.error('Response was:', responseText);
+                    throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
+                }
+                
+                if (!data.secret) {
+                    console.error('No secret in response:', data);
+                    throw new Error('No connection token received from server');
+                }
+
+                console.log('Connection token received successfully, length:', data.secret.length);
+                console.log('Token starts with:', data.secret.substring(0, 8));
+                return data.secret;
+                
+            } catch (error) {
+                console.error('Failed to fetch connection token:', error);
+                throw new Error(`Unable to connect to payment system: ${error.message}`);
+            }
+        }
+
+        // Handle unexpected reader disconnect
+        function onUnexpectedDisconnect() {
+            showStatus('Reader disconnected unexpectedly. Please reconnect.', 'error');
+            updateConnectionStatus('offline');
+            resetConnectButton();
+        }
+
+        // Main connect function
+        async function connectReader() {
+            const button = document.getElementById('connectButton');
+            const buttonText = document.getElementById('buttonText');
+            
+            try {
+                console.log('Starting reader connection process...');
+                console.log('Setup data:', setupData);
+
+                // Update button state
+                button.disabled = true;
+                button.className = 'connect-button connecting';
+                buttonText.innerHTML = '<span class="loading"></span>Discovering readers...';
+                
+                showStatus('Searching for your M2 reader...', 'info');
+
+                // Discover readers
+                console.log('Calling discoverReaders with:', {
+                    simulated: CONFIG.TEST_MODE,
+                    location: setupData.location_id
+                });
+
+                const discoverConfig = {
+                    simulated: CONFIG.TEST_MODE
+                };
+
+                // Only add location for real readers, not simulated
+                if (!CONFIG.TEST_MODE && setupData.location_id) {
+                    discoverConfig.location = setupData.location_id;
+                }
+
+                const discoverResult = await terminal.discoverReaders(discoverConfig);
+
+                console.log('Discover result:', discoverResult);
+
+                if (discoverResult.error) {
+                    console.error('Discovery error:', discoverResult.error);
+                    throw new Error(`Discovery failed: ${discoverResult.error.message}`);
+                }
+
+                if (discoverResult.discoveredReaders.length === 0) {
+                    console.warn('No readers found');
+                    throw new Error('No M2 readers found. Make sure your reader is on and nearby.');
+                }
+
+                console.log(`Found ${discoverResult.discoveredReaders.length} readers:`, discoverResult.discoveredReaders);
+
+                // Use first available reader
+                const targetReader = discoverResult.discoveredReaders[0];
+                console.log('Connecting to reader:', targetReader);
+
+                buttonText.innerHTML = '<span class="loading"></span>Connecting...';
+                showStatus('Reader found! Connecting...', 'info');
+
+                // Connect to the reader
+                const connectConfig = {
+                    location_id: setupData.location_id
+                };
+
+                // For simulated readers, ensure clean connection
+                console.log('Connecting with config:', connectConfig);
+                const connectResult = await terminal.connectReader(targetReader, connectConfig);
+
+                console.log('Connect result:', connectResult);
+
+                if (connectResult.error) {
+                    console.error('Connection error:', connectResult.error);
+                    throw new Error(`Connection failed: ${connectResult.error.message}`);
+                }
+
+                currentReader = connectResult.reader;
+                console.log('Successfully connected to reader:', currentReader);
+                
+                // Success!
+                button.className = 'connect-button success';
+                buttonText.textContent = '✅ Connected Successfully!';
+                
+                showStatus('🎉 Reader connected successfully! You can now accept payments.', 'success');
+                updateConnectionStatus('online', currentReader.id);
+
+                // Send success webhook to Make
+                console.log('Sending success webhook...');
+                await sendWebhook('success', {
+                    tmr_id: currentReader.id,
+                    serial_number: currentReader.serial_number,
+                    device_type: currentReader.device_type,
+                    status: 'connected'
+                });
+
+            } catch (error) {
+                console.error('Connection failed:', error);
+                
+                button.className = 'connect-button error';
+                buttonText.textContent = '❌ Connection Failed';
+                
+                const errorMessage = error.message || 'Unknown error occurred';
+                showStatus(`Connection failed: ${errorMessage}`, 'error');
+                updateConnectionStatus('offline');
+
+                // Send failure webhook to Make
+                console.log('Sending failure webhook...');
+                await sendWebhook('failure', {
+                    error: errorMessage
+                });
+
+                // Reset button after delay
+                setTimeout(resetConnectButton, 3000);
+            }
+        }
+
+        // Reset connect button to initial state
+        function resetConnectButton() {
+            const button = document.getElementById('connectButton');
+            const buttonText = document.getElementById('buttonText');
+            
+            button.disabled = false;
+            button.className = 'connect-button';
+            buttonText.textContent = 'Connect M2 Reader';
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.textContent = message;
+            statusDiv.classList.remove('hidden');
+        }
+
+        // Update connection status display
+        function updateConnectionStatus(status, readerId = '') {
+            const statusDiv = document.getElementById('readerStatusDiv');
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('connectionStatus');
+            const readerIdDiv = document.getElementById('readerId');
+
+            statusDiv.classList.remove('hidden');
+            
+            indicator.className = `status-indicator status-${status}`;
+            
+            switch(status) {
+                case 'online':
+                    statusText.textContent = 'Connected';
+                    readerIdDiv.textContent = readerId ? `ID: ${readerId}` : '';
+                    break;
+                case 'connecting':
+                    statusText.textContent = 'Connecting...';
+                    readerIdDiv.textContent = '';
+                    break;
+                case 'offline':
+                default:
+                    statusText.textContent = 'Disconnected';
+                    readerIdDiv.textContent = '';
+                    break;
+            }
+        }
+
+        // Send registration event webhook to Make scenario
+        async function sendWebhook(event, data) {
+            try {
+                const payload = {
+                    event: `m2_reader_${event}`,
+                    timestamp: new Date().toISOString(),
+                    restaurant_name: setupData.restaurant,
+                    row_id: setupData.row_id,
+                    regemail: setupData.regemail,
+                    location_id: setupData.location_id,
+                    request_type: 'registration_event',
+                    ...data
+                };
+
+                // Test mode - just log instead of sending
+                if (CONFIG.TEST_MODE) {
+                    console.log('TEST MODE: Would send webhook:', payload);
+                    return;
+                }
+
+                console.log('Sending webhook to:', CONFIG.WEBHOOK_URL);
+                console.log('Webhook payload:', payload);
+
+                await fetch(CONFIG.WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                console.log('Registration webhook sent successfully:', payload);
+                
+            } catch (error) {
+                console.error('Failed to send registration webhook:', error);
+                // Don't show error to user for webhook failures
+            }
+        }
+
+        // Handle page visibility change (user switches apps/tabs)
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible' && currentReader) {
+                // Check if reader is still connected when user returns
+                checkReaderStatus();
+            }
+        });
+
+        // Check reader status
+        async function checkReaderStatus() {
+            if (!terminal || !currentReader) return;
+
+            try {
+                const status = await terminal.getConnectionStatus();
+                if (status === 'connected') {
+                    updateConnectionStatus('online', currentReader.id);
+                } else {
+                    updateConnectionStatus('offline');
+                }
+            } catch (error) {
+                console.error('Failed to check reader status:', error);
+                updateConnectionStatus('offline');
+            }
+        }
+
+        // Test function for simulated reader (development only)
+        function connectSimulatedReader() {
+            if (terminal) {
+                terminal.discoverReaders({ simulated: true })
+                    .then(result => {
+                        if (result.discoveredReaders.length > 0) {
+                            return terminal.connectReader(result.discoveredReaders[0]);
+                        }
+                    })
+                    .then(result => {
+                        if (result && result.reader) {
+                            console.log('Simulated reader connected:', result.reader);
+                        }
+                    });
+            }
+        }
+
+        // Expose for debugging
+        window.terminalDebug = {
+            terminal,
+            setupData,
+            connectSimulatedReader,
+            checkReaderStatus
+        };
+    </script>
+</body>
+</html>
