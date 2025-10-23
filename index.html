@@ -442,7 +442,7 @@
                 // Test mode - use manual token if provided
                 if (CONFIG.TEST_MODE) {
                     // Option 1: Use manual test token (get this from your Make scenario test run)
-                    const MANUAL_TEST_TOKEN = 'pst_test_YWNjdF8xNGlRWTJCa2JERkhIbW5TLFFlU2VkcTlNQ0U2OGRlSXRnYjFvUTFvUGNsMzVKRlE_00STJQei4k'; // Your actual token for testing
+                    const MANUAL_TEST_TOKEN = ''; // Paste a fresh token here if needed
                     
                     if (MANUAL_TEST_TOKEN && MANUAL_TEST_TOKEN.startsWith('pst_')) {
                         console.log('TEST MODE: Using manual test token');
@@ -451,8 +451,8 @@
                         return MANUAL_TEST_TOKEN;
                     }
                     
-                    // Option 2: Still call webhook but with detailed logging
-                    console.log('TEST MODE: No manual token, calling webhook with detailed logging');
+                    // Option 2: Call webhook to get fresh token (recommended)
+                    console.log('TEST MODE: Getting fresh token from webhook');
                 }
                 
                 console.log('Requesting connection token for location:', setupData.location_id);
@@ -512,6 +512,12 @@
                 
             } catch (error) {
                 console.error('Failed to fetch connection token:', error);
+                
+                // Check for expired token error
+                if (error.message.includes('expired') || error.message.includes('ConnectionToken has expired')) {
+                    throw new Error('Connection token expired. Please refresh the page to get a new token.');
+                }
+                
                 throw new Error(`Unable to connect to payment system: ${error.message}`);
             }
         }
